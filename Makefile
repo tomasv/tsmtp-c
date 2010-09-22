@@ -1,8 +1,10 @@
 CFLAGS=-g
 
-all: server client
+all: server.out client.out
 
-server: server.c
+server.out: server.c
 
-client: client.c
+client.out: client.c
 
+clean:
+	-rm server.out client.out
