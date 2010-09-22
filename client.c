@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 
 	freeaddrinfo(servinfo); // all done with this structure
 
-	// create epoll set with one listening socket
+	// create epoll set with one listening socketa
 	int epfd = epoll_create(1);
 	struct epoll_event event;
 	event.data.fd = sockfd;
