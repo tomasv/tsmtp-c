@@ -1,4 +1,5 @@
 CFLAGS=-g
+LDFLAGS=-lpthread
 
 all: server client
 

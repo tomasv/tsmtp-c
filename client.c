@@ -41,21 +41,18 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	// get address info
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	getaddrinfo(argv[1], PORT, &hints, &servinfo);
 
-	// create socket, connect to it, print some connection info
 	sockfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
 	connect(sockfd, servinfo->ai_addr, servinfo->ai_addrlen);
 	inet_ntop(servinfo->ai_family, get_in_addr((struct sockaddr *)servinfo->ai_addr), s, sizeof s);
 	printf("client: connecting to %s\n", s);
 
-	freeaddrinfo(servinfo); // all done with this structure
+	freeaddrinfo(servinfo);
 
-	// create epoll set with one listening socketa
 	int epfd = epoll_create(1);
 	struct epoll_event event;
 	event.data.fd = sockfd;
@@ -65,10 +62,12 @@ int main(int argc, char *argv[])
 	struct epoll_event* events = calloc(1, sizeof(struct epoll_event));
 	for (;;) {
 		int nfds = epoll_wait(epfd, events, 1, -1);
-		if (( numbytes = recv(events->data.fd, buf, MAXDATASIZE-1, 0) ) == 0)
-			break; // connection closed on server side
+		if (( numbytes = recv(events->data.fd, buf, MAXDATASIZE-1, 0) ) < 1) {
+			printf("Received %d\n");
+			break;
+		}
 		buf[numbytes] = '\0';
-		printf("client: received '%s'\n", buf);
+		printf("client: received %d bytes, message is '%s'\n", numbytes, buf);
 	}
 
 	close(sockfd);
