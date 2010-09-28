@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 {
 	int sockfd, numbytes;  
 	char buf[MAXDATASIZE];
-	struct addrinfo hints, *servinfo, *p;
+	struct addrinfo hints, *servinfo;
 	char s[INET6_ADDRSTRLEN];
 
 	if (argc != 2) {
@@ -61,9 +61,9 @@ int main(int argc, char *argv[])
 
 	struct epoll_event* events = calloc(1, sizeof(struct epoll_event));
 	for (;;) {
-		int nfds = epoll_wait(epfd, events, 1, -1);
+		epoll_wait(epfd, events, 1, -1);
 		if (( numbytes = recv(events->data.fd, buf, MAXDATASIZE-1, 0) ) < 1) {
-			printf("Received %d\n");
+			printf("Received %d\n", numbytes);
 			break;
 		}
 		buf[numbytes] = '\0';
