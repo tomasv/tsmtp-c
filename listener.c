@@ -36,6 +36,8 @@ int listener(char* service) {
 	hints.ai_flags = AI_PASSIVE;
 	getaddrinfo(NULL, service, &hints, &servinfo);
 	sockfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
+	int on = 1;
+	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 	bind(sockfd, servinfo->ai_addr, servinfo->ai_addrlen);
 	freeaddrinfo(servinfo);
 
