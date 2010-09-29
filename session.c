@@ -28,6 +28,16 @@ int get_session_command(char* buffer) {
 	return -1;
 }
 
+struct request_command* parse_request(char* request) {
+	struct request_command* request_command = malloc(sizeof(struct request_command));
+	char* delim = " \t";
+	char* word;
+
+	for (word = strtok(request, delim); word; word = strtok(NULL, delim)) {
+		printf("request word is: %s\n", word);
+	}
+}
+
 void* session_worker(void* data) {
 	int capacity = 1;
 	int timeout = 15000;
@@ -69,6 +79,8 @@ void* session_worker(void* data) {
 
 			if (strlen(buffer) < 4) // dont parse nonsense
 				continue;
+
+			parse_request(buffer);
 
 			session.command = get_session_command(buffer);
 

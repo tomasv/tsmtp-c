@@ -19,6 +19,12 @@ enum session_command {
 	CMD_QUIT
 };
 
+enum server_replies {
+	REPLY_OK,
+	REPLY_GREET,
+	REPLY_SYNTAX_ERROR
+};
+
 struct session_data {
 	int sockfd;
 	int state;
@@ -26,6 +32,10 @@ struct session_data {
 	char* client_domain;
 };
 
+struct request_command {
+	int command;
+	struct list* arguments;
+};
 
 int get_session_command(char* buffer);
 void* session_worker(void* data);
