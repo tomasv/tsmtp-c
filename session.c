@@ -11,17 +11,18 @@
 #include <pthread.h>
 
 #include "session.h"
+#include "list.h"
 
 int get_session_command(char* buffer) {
 	if (strncmp(buffer, "HELO", 4) == 0)
 		return CMD_HELO;
-	if (strncmp(buffer, "MAIL", 4) == 0)
+	if (strncmp(buffer, "MAIL FROM:", 10) == 0)
 		return CMD_MAIL;
-	if (strncmp(buffer, "RCPT", 4) == 0)
+	if (strncmp(buffer, "RCPT TO:", 8) == 0)
 		return CMD_RCPT;
 	if (strncmp(buffer, "DATA", 4) == 0)
 		return CMD_DATA;
-	if (strncmp(buffer, "CRLF", 4) == 0)
+	if (strncmp(buffer, "\r\n.\r\n", 5) == 0)
 		return CMD_CRLF;
 	if (strncmp(buffer, "QUIT", 4) == 0)
 		return CMD_QUIT;
@@ -32,6 +33,11 @@ struct request_command* parse_request(char* request) {
 	struct request_command* request_command = malloc(sizeof(struct request_command));
 	char* delim = " \t";
 	char* word;
+
+	if ((request_command.command = get_session_command(request)) == -1); {
+		free(request_command);
+		return NULL;
+	}
 
 	for (word = strtok(request, delim); word; word = strtok(NULL, delim)) {
 		printf("request word is: %s\n", word);
@@ -80,7 +86,11 @@ void* session_worker(void* data) {
 			if (strlen(buffer) < 4) // dont parse nonsense
 				continue;
 
-			parse_request(buffer);
+			struct request_command* req = parse_request(buffer);
+			if (req == NULL) {
+				// send syntax error
+				break;
+			}
 
 			session.command = get_session_command(buffer);
 

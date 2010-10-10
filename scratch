@@ -32,3 +32,11 @@ Communication
 
 
 
+Messages:
+
+HELO hostname
+MAIL FROM: address@some.com
+RCPT TO: another@address.com
+DATA
+\r\n.\r\n
+QUIT
