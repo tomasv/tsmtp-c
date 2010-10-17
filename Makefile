@@ -5,12 +5,19 @@ all: server client
 
 list_test: list.o list_test.c
 
-server: listener.o sender.o session.o server.c
+parser_test: parser.c
+	$(CC) $(CFLAGS) -DPARSER_TEST $^ -o $@
+
+server: listener.o sender.o session.o parser.o list.o server.c
 
 listener.o: session.o sender.o
 
 sender.o: sender.c
 
-session.o: session.c
+session.o: parser.o session.c
+
+parser.o: list.o parser.c
+
+list.o: list.c
 
 client: client.c

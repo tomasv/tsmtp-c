@@ -34,9 +34,15 @@ Communication
 
 Messages:
 
-HELO hostname
-MAIL FROM: address@some.com
-RCPT TO: another@address.com
-DATA
-\r\n.\r\n
-QUIT
+c) HELO hostname
+s) 250 Ok
+c) MAIL FROM:<address@some.com>
+s) 250 Ok
+c) RCPT TO:<another@address.com>
+s) 250 Ok
+c) DATA
+s) 354 End data with <CR><LF>.<CR><LF>
+c) \r\n.\r\n
+s) 250 Ok
+c) QUIT
+s) 221 Bye

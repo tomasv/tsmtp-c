@@ -22,17 +22,27 @@ enum session_command {
 enum server_replies {
 	REPLY_OK,
 	REPLY_GREET,
-	REPLY_SYNTAX_ERROR
+	REPLY_SYNTAX_ERROR,
+	REPLY_DATA_INFO,
+	REPLY_BYE,
+	REPLY_OOO
 };
 
 struct session_data {
 	int sockfd;
 	int state;
 	int command;
-	char* client_domain;
+	char* domain;
+	struct message_container* message;
 };
 
-struct request_command {
+struct message_container {
+	char* mail_from;
+	char* rcpt_to;
+	char* body;
+};
+
+struct request {
 	int command;
 	struct list* arguments;
 };
