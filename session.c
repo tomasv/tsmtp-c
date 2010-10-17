@@ -114,6 +114,10 @@ void* session_worker(void* data) {
 					free(session->message->body);
 					session->message->body = extended_message;
 				}
+				if (req->arguments) {
+					free_list(req->arguments);	
+				}
+				free(req);
 				continue;
 			}
 
@@ -187,6 +191,10 @@ void* session_worker(void* data) {
 					printf("session %d: syntax error\n", sockfd);
 					break;
 			}
+			if (req->arguments) {
+				free_list(req->arguments);	
+			}
+			free(req);
 		}
 	}
 	free(buffer);

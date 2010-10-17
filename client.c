@@ -15,9 +15,23 @@
 
 #include <arpa/inet.h>
 
+#include "session.h"
+#include "parser.h"
+
 #define PORT "3490" // the port client will be connecting to 
 
-#define MAXDATASIZE 100 // max number of bytes we can get at once 
+#define BUFFER_SIZE 1024 // max number of bytes we can get at once 
+
+#define RECV_RESPONSE(sockfd, buffer) numbytes = recv(sockfd, buffer, BUFFER_SIZE - 1, 0); \
+		if (numbytes == 0) { \
+			printf("Server closed connection.\n"); \
+			break; \
+		} \
+		if (numbytes < 0) { \
+			printf("Error.\n"); \
+			break; \
+		} \
+		buffer[BUFFER_SIZE] = '\0';
 
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa)
@@ -32,14 +46,20 @@ void *get_in_addr(struct sockaddr *sa)
 int main(int argc, char *argv[])
 {
 	int sockfd, numbytes;  
-	char buf[MAXDATASIZE];
+	char buffer[BUFFER_SIZE];
 	struct addrinfo hints, *servinfo;
 	char s[INET6_ADDRSTRLEN];
 
-	if (argc != 2) {
-		fprintf(stderr,"usage: client hostname\n");
+	if (argc != 5) {
+		fprintf(stderr,"usage: client hostname from to message\n");
 		exit(1);
 	}
+
+	char* from = argv[2];
+	char* to = argv[3];
+	char* message = argv[4];
+
+	printf("FROM: %s, TO: %s, MESSAGE: %s\n", from, to, message);
 
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_UNSPEC;
@@ -56,20 +76,96 @@ int main(int argc, char *argv[])
 	int epfd = epoll_create(1);
 	struct epoll_event event;
 	event.data.fd = sockfd;
-	event.events = EPOLLIN | EPOLLHUP;
+	event.events = EPOLLIN;
 	epoll_ctl(epfd, EPOLL_CTL_ADD, sockfd, &event);
 
 	struct epoll_event* events = calloc(1, sizeof(struct epoll_event));
 	for (;;) {
 		epoll_wait(epfd, events, 1, -1);
-		if (( numbytes = recv(events->data.fd, buf, MAXDATASIZE-1, 0) ) < 1) {
-			printf("Received %d\n", numbytes);
+		char* sendbuffer = (char*) malloc(sizeof(char) * BUFFER_SIZE);
+
+		// get greeting
+		RECV_RESPONSE(sockfd, buffer);
+		int response;
+		if ((response = get_session_response(buffer)) != REPLY_GREET) {
+			printf("Unexpected reply: %d\n", response);
 			break;
 		}
-		buf[numbytes] = '\0';
-		printf("client: received %d bytes, message is '%s'\n", numbytes, buf);
-	}
 
+		// send helo
+		strcpy(sendbuffer,"HELO localhost");
+		send(sockfd, sendbuffer, strlen(sendbuffer), 0);
+
+		// get approval
+		RECV_RESPONSE(sockfd, buffer);
+		if ((response = get_session_response(buffer)) != REPLY_OK) {
+			printf("Unexpected reply: %d\n", response);
+			break;
+		}
+
+		// send from address
+		strcpy(sendbuffer, "MAIL FROM:");
+		strncat(sendbuffer, from, strlen(from));
+		send(sockfd, sendbuffer, strlen(sendbuffer), 0);
+
+		// get approval
+		RECV_RESPONSE(sockfd, buffer);
+		if ((response = get_session_response(buffer)) != REPLY_OK) {
+			printf("Unexpected reply: %d\n", response);
+			break;
+		}
+
+		// send to address
+		strcpy(sendbuffer, "RCPT TO:");
+		strncat(sendbuffer, to, strlen(to));
+		send(sockfd, sendbuffer, strlen(sendbuffer), 0);
+
+		// get approval
+		RECV_RESPONSE(sockfd, buffer);
+		if ((response = get_session_response(buffer)) != REPLY_OK) {
+			printf("Unexpected reply: %d\n", response);
+			break;
+		}
+
+		// send data transaction command
+		strcpy(sendbuffer, "DATA");
+		send(sockfd, sendbuffer, strlen(sendbuffer), 0);
+
+		// get approval
+		RECV_RESPONSE(sockfd, buffer);
+		if ((response = get_session_response(buffer)) != REPLY_DATA_INFO) {
+			printf("Unexpected reply: %d\n", response);
+			break;
+		}
+
+		// send data transaction command
+		send(sockfd, message, strlen(message), 0);
+		strcpy(sendbuffer, ".\r\n");
+		send(sockfd, sendbuffer, strlen(sendbuffer), 0);
+
+		// get confirmation
+		RECV_RESPONSE(sockfd, buffer);
+		if ((response = get_session_response(buffer)) != REPLY_OK) {
+			printf("Unexpected reply: %d\n", response);
+			break;
+		}
+
+		// end session
+		strcpy(sendbuffer, "QUIT");
+		send(sockfd, sendbuffer, strlen(sendbuffer), 0);
+
+		// get bye from server
+		RECV_RESPONSE(sockfd, buffer);
+		if ((response = get_session_response(buffer)) != REPLY_BYE) {
+			printf("Unexpected reply: %d\n", response);
+			break;
+		}
+
+		printf("Message sent successfully!\n");
+	}
+	// close connection
 	close(sockfd);
+
+	printf("Done.\n");
 	return 0;
 }

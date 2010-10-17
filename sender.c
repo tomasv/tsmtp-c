@@ -1,14 +1,26 @@
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "session.h"
 
 #include "sender.h"
 
 void* sender_worker(void* data) {
-	struct message_container* message = (struct message_container*) data;
 	printf("sender: starting work\n");
-	printf("sender: sending message '%s'\n", message->body);
+
+	struct message_container* message = (struct message_container*) data;
+	printf("sender: sending message\n");
+	printf("sender: FROM: %s\n", message->mail_from);
+	printf("sender: TO: %s\n", message->rcpt_to);
+	printf("sender: BODY:\n");
+	printf("%s", message->body);
+
+	// cleanup
+	free(message->mail_from);
+	free(message->rcpt_to);
+	free(message->body);
+	free(message);
 	printf("sender: finished\n");
 	return NULL;
 }

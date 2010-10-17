@@ -20,4 +20,4 @@ parser.o: list.o parser.c
 
 list.o: list.c
 
-client: client.c
+client: parser.o list.o client.c
