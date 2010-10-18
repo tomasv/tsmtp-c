@@ -112,6 +112,7 @@ void* session_worker(void* data) {
 					extended_message[size] = '\0';
 					free(session->message->body);
 					session->message->body = extended_message;
+					printf("%s\n", extended_message);
 				}
 				if (req->arguments) {
 					free_list(req->arguments);	
