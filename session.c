@@ -15,6 +15,7 @@
 #include "session.h"
 
 #define REPLY_TO_CLIENT(sock, reply) send(sock, (void*) server_replies[reply], strlen(server_replies[reply]), 0) 
+#define BUFFER_SIZE 1024
 
 static char* server_replies[] = {
 	"250 Ok\n",
@@ -29,6 +30,10 @@ void session_reset(struct session_data * session) {
 	session->state = SESSION_NEW;
 	session->command = -1;
 	session->domain = NULL;
+	session->message = (struct message_container*) malloc(sizeof(struct message_container));
+	session->message->mail_from = NULL;
+	session->message->rcpt_to = NULL;
+	session->message->body = NULL;
 }
 
 void session_submit(struct session_data * session) {
@@ -46,10 +51,6 @@ void* session_worker(void* data) {
 	struct session_data * session = (struct session_data*) data;
 	int sockfd = session->sockfd;
 	session_reset(session);
-	session->message = (struct message_container*) malloc(sizeof(struct message_container));
-	session->message->mail_from = NULL;
-	session->message->rcpt_to = NULL;
-	session->message->body = NULL;
 
 	printf("session %d: starting work, state %d\n", sockfd, session->state);
 
@@ -79,6 +80,7 @@ void* session_worker(void* data) {
 
 		// we parse our messages, we assume only one event happens
 		if (nfds == 1) {
+			memset(buffer, 0, BUFFER_SIZE);
 			int received_bytes = recv(sockfd, buffer, buffer_size - 1, 0);
 
 			// connection closed
@@ -93,9 +95,6 @@ void* session_worker(void* data) {
 				break;
 			}
 
-			// make it null terminated in case it isn't already so
-			buffer[received_bytes] = '\0';
-
 			// form a request structure using the received message
 			struct request* req = parse_request(buffer);
 
@@ -108,7 +107,7 @@ void* session_worker(void* data) {
 					// gotta love C
 					int size = strlen(buffer) + strlen(session->message->body) + 1;
 					char * extended_message = (char*) malloc(sizeof(char) * size);
-					strncpy(extended_message, session->message->body, strlen(session->message->body));
+					strncpy(extended_message, session->message->body, strlen(session->message->body)+1);
 					strncat(extended_message, buffer, strlen(buffer));
 					extended_message[size] = '\0';
 					free(session->message->body);
@@ -172,6 +171,7 @@ void* session_worker(void* data) {
 					// only after data command was invoked
 					if (session->state == SESSION_DATA) {
 						session_submit(session);
+						session_reset(session);
 						session->state = SESSION_GREET;
 						REPLY_TO_CLIENT(sockfd, REPLY_OK);
 						printf("session %d: data transaction over, state changed to greeted\n", sockfd);
@@ -190,9 +190,6 @@ void* session_worker(void* data) {
 					REPLY_TO_CLIENT(sockfd, REPLY_SYNTAX_ERROR);
 					printf("session %d: syntax error\n", sockfd);
 					break;
-			}
-			if (req->arguments) {
-				free_list(req->arguments);	
 			}
 			free(req);
 		}
