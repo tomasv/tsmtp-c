@@ -35,13 +35,28 @@ int listener(char* service) {
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 	getaddrinfo(NULL, service, &hints, &servinfo);
-	sockfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
-	int on = 1;
-	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-	bind(sockfd, servinfo->ai_addr, servinfo->ai_addrlen);
-	freeaddrinfo(servinfo);
+	if (!servinfo) {
+		printf("Cannot resolve remote address.\n");
+	}
 
-	listen(sockfd, BACKLOG);
+	if ((sockfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol)) < 0) {
+		printf("Cannot create socket.\n");
+		exit(1);
+	}
+	int on = 1;
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
+		printf("setsockopt failed.\n");
+		exit(1);
+	}
+	if (bind(sockfd, servinfo->ai_addr, servinfo->ai_addrlen) < 0) {
+		printf("Bind failed.\n");
+		exit(1);
+	}
+	freeaddrinfo(servinfo);
+	if (listen(sockfd, BACKLOG) < 0) {
+		printf("Listening failed.\n");
+		exit(1);
+	}
 	printf("listener: waiting for connections...\n");
 
 	int epfd = epoll_create(16);

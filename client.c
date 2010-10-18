@@ -65,10 +65,22 @@ int main(int argc, char *argv[])
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	getaddrinfo(argv[1], PORT, &hints, &servinfo);
+	if (!servinfo) {
+		printf("Cannot resolve remote address.\n");
+	}
 
-	sockfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
-	connect(sockfd, servinfo->ai_addr, servinfo->ai_addrlen);
-	inet_ntop(servinfo->ai_family, get_in_addr((struct sockaddr *)servinfo->ai_addr), s, sizeof s);
+	if ((sockfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol)) < 0) {
+		printf("Cannot create socket.\n");
+		exit(1);
+	}
+	if ((connect(sockfd, servinfo->ai_addr, servinfo->ai_addrlen)) < 0) {
+		printf("Cannot connect to socket.\n");
+		exit(1);
+	}
+	if ((inet_ntop(servinfo->ai_family, get_in_addr((struct sockaddr *)servinfo->ai_addr), s, sizeof s)) < 0) {
+		printf("Cannot convert to text.\n");
+		exit(1);
+	}
 	printf("client: connecting to %s\n", s);
 
 	freeaddrinfo(servinfo);
