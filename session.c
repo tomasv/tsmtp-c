@@ -112,13 +112,31 @@ void* session_worker(void* data) {
 					extended_message[size] = '\0';
 					free(session->message->body);
 					session->message->body = extended_message;
-					printf("%s\n", extended_message);
 				}
 				if (req->arguments) {
-					free_list(req->arguments);	
+					free(req->arguments);	
 				}
 				free(req);
 				continue;
+			}
+
+			if (session->state == SESSION_DATA && req->command == CMD_CRLF && (strlen(buffer) > 3)) {
+				// add line to body
+				if (!session->message->body) {
+					session->message->body = strdup(buffer);
+				} else {
+					// gotta love C
+					int size = strlen(buffer) + strlen(session->message->body) + 1;
+					char * extended_message = (char*) malloc(sizeof(char) * size);
+					strncpy(extended_message, session->message->body, strlen(session->message->body)+1);
+					strncat(extended_message, buffer, strlen(buffer)-5);
+					extended_message[size] = '\0';
+					free(session->message->body);
+					session->message->body = extended_message;
+				}
+				if (req->arguments) {
+					free(req->arguments);	
+				}
 			}
 
 			// fill session data according to request
@@ -130,7 +148,7 @@ void* session_worker(void* data) {
 						REPLY_TO_CLIENT(sockfd, REPLY_OK);
 					}
 					session->state = SESSION_GREET;
-					session->domain = strdup((char*) (req->arguments->data));
+					session->domain = strdup((char*) (req->arguments));
 					printf("session %d: state changed to greeted\n", sockfd);
 					break;
 				case CMD_MAIL:
@@ -138,7 +156,7 @@ void* session_worker(void* data) {
 					// can be after a helo or transaction completion
 					if (session->state == SESSION_GREET) {
 						session->state = SESSION_MAIL;
-						session->message->mail_from = strdup((char*) (req->arguments->data));
+						session->message->mail_from = strdup((char*) (req->arguments));
 						REPLY_TO_CLIENT(sockfd, REPLY_OK);
 						printf("session %d: got mail from\n", sockfd);
 					} else {
@@ -150,7 +168,7 @@ void* session_worker(void* data) {
 					// can be after a mail from or another rcpt to command
 					if (session->state == SESSION_MAIL || session->state == SESSION_RCPT) {
 						session->state = SESSION_RCPT;
-						session->message->rcpt_to = strdup((char*) (req->arguments->data));
+						session->message->rcpt_to = strdup((char*) (req->arguments));
 						REPLY_TO_CLIENT(sockfd, REPLY_OK);
 						printf("session %d: state changed to got receipients\n", sockfd);
 					} else {

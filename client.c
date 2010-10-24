@@ -50,21 +50,22 @@ int main(int argc, char *argv[])
 	struct addrinfo hints, *servinfo;
 	char s[INET6_ADDRSTRLEN];
 
-	if (argc != 5) {
-		fprintf(stderr,"usage: client hostname from to message\n");
+	if (argc != 6) {
+		fprintf(stderr,"usage: %s hostname port from to message\n", argv[0]);
 		exit(1);
 	}
 
-	char* from = argv[2];
-	char* to = argv[3];
-	char* message = argv[4];
+	char* port = argv[2];
+	char* from = argv[3];
+	char* to = argv[4];
+	char* message = argv[5];
 
 	printf("FROM: %s, TO: %s, MESSAGE: %s\n", from, to, message);
 
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
-	getaddrinfo(argv[1], PORT, &hints, &servinfo);
+	getaddrinfo(argv[1], port, &hints, &servinfo);
 	if (!servinfo) {
 		printf("Cannot resolve remote address.\n");
 	}
@@ -105,7 +106,7 @@ int main(int argc, char *argv[])
 		}
 
 		// send helo
-		strcpy(sendbuffer,"HELO localhost");
+		strcpy(sendbuffer,"HELO localhost\n");
 		send(sockfd, sendbuffer, strlen(sendbuffer), 0);
 
 		// get approval
@@ -118,6 +119,7 @@ int main(int argc, char *argv[])
 		// send from address
 		strcpy(sendbuffer, "MAIL FROM:");
 		strncat(sendbuffer, from, strlen(from));
+		strncat(sendbuffer, "\n", 1);
 		send(sockfd, sendbuffer, strlen(sendbuffer), 0);
 
 		// get approval
@@ -130,6 +132,7 @@ int main(int argc, char *argv[])
 		// send to address
 		strcpy(sendbuffer, "RCPT TO:");
 		strncat(sendbuffer, to, strlen(to));
+		strncat(sendbuffer, "\n", 1);
 		send(sockfd, sendbuffer, strlen(sendbuffer), 0);
 
 		// get approval
@@ -141,6 +144,7 @@ int main(int argc, char *argv[])
 
 		// send data transaction command
 		strcpy(sendbuffer, "DATA");
+		strncat(sendbuffer, "\n", 1);
 		send(sockfd, sendbuffer, strlen(sendbuffer), 0);
 
 		// get approval
@@ -152,7 +156,7 @@ int main(int argc, char *argv[])
 
 		// send data transaction command
 		send(sockfd, message, strlen(message), 0);
-		strcpy(sendbuffer, ".\r\n");
+		strcpy(sendbuffer, "\r\n.\r\n");
 		send(sockfd, sendbuffer, strlen(sendbuffer), 0);
 
 		// get confirmation
@@ -164,6 +168,7 @@ int main(int argc, char *argv[])
 
 		// end session
 		strcpy(sendbuffer, "QUIT");
+		strncat(sendbuffer, "\n", 1);
 		send(sockfd, sendbuffer, strlen(sendbuffer), 0);
 
 		// get bye from server

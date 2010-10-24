@@ -31,10 +31,12 @@ int get_session_command(char* buffer) {
 		return CMD_RCPT;
 	if (strncmp(buffer, "DATA", 4) == 0)
 		return CMD_DATA;
-	if (strncmp(buffer, ".\r\n", 3) == 0)
+	if (strncmp(buffer, ".\r\n", 3) == 0) {
 		return CMD_CRLF;
-	if (strncmp(buffer+strlen(buffer)-5, "\r\n.\r\n", 5) == 0)
+	}
+	if (strncmp(buffer+strlen(buffer)-5, "\r\n.\r\n", 5) == 0) {
 		return CMD_CRLF;
+	}
 	if (strncmp(buffer, "QUIT", 4) == 0)
 		return CMD_QUIT;
 	return -1;
@@ -85,6 +87,7 @@ struct request * parse_request(char * message)
 	struct request * req = malloc(sizeof(struct request));
 	req->command = get_session_command(message);
 	if (req->command == -1) {
+		req->arguments = NULL;
 		return req;
 	}
 	req->arguments = NULL;
@@ -92,32 +95,36 @@ struct request * parse_request(char * message)
 	char * buffer = strdup(message);
 	char * arg_start = get_argument_string_start(buffer, req->command);
 
-	char* delim = " \t\r";
-	char* word;
-
-	for (word = strtok(arg_start, delim); word; word = strtok(NULL, delim)) {
-		// avoid empty arguments (newlines, carry returns, etc.)
-		if (!strncmp(word, "\n\0", 2))
-			break;
-		if (!strncmp(word, "\r\0", 2))
-			break;
-		add_to_list(&(req->arguments), strdup(word));
-	}
-
-	switch(req->command) {
-		case CMD_HELO:
-		case CMD_MAIL:
-		case CMD_RCPT:
-			// if no arguments, these commands are invalid
-			if (!req->arguments)
-				req->command = -1;
-			break;
-		default:
-			break;
-	}
-
+	if (strlen(arg_start) > 0)
+		req->arguments = strdup(arg_start);
 	free(buffer);
 	return req;
+	/* char* delim = " \t\r"; */
+	/* char* word; */
+
+	/* for (word = strtok(arg_start, delim); word; word = strtok(NULL, delim)) { */
+	/* 	// avoid empty arguments (newlines, carry returns, etc.) */
+	/* 	if (!strncmp(word, "\n\0", 2)) */
+	/* 		break; */
+	/* 	if (!strncmp(word, "\r\0", 2)) */
+	/* 		break; */
+	/* 	add_to_list(&(req->arguments), strdup(word)); */
+	/* } */
+
+	/* switch(req->command) { */
+	/* 	case CMD_HELO: */
+	/* 	case CMD_MAIL: */
+	/* 	case CMD_RCPT: */
+	/* 		// if no arguments, these commands are invalid */
+	/* 		if (!req->arguments) */
+	/* 			req->command = -1; */
+	/* 		break; */
+	/* 	default: */
+	/* 		break; */
+	/* } */
+
+	/* free(buffer); */
+	/* return req; */
 }
 
 #ifdef PARSER_TEST

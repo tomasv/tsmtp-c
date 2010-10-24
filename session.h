@@ -44,7 +44,7 @@ struct message_container {
 
 struct request {
 	int command;
-	struct list* arguments;
+	char* arguments;
 };
 
 int get_session_command(char* buffer);
