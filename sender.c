@@ -14,7 +14,10 @@ void* sender_worker(void* data) {
 	printf("sender: FROM: %s\n", message->mail_from);
 	printf("sender: TO: %s\n", message->rcpt_to);
 	printf("sender: BODY:\n");
-	printf("%s", message->body);
+	if (message->body)
+		printf("%s", message->body);
+	else
+		printf("No body.\n");
 	printf("\n");
 
 	// cleanup
