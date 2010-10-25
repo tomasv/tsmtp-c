@@ -1,0 +1,9 @@
+This is a simple SMTP server, with a stub instead of actual message sending.
+
+Implemented commands:
+HELO
+MAIL FROM
+RCPT TO (limited to only one receipient)
+DATA
+<CR><LF>.<CR><LF>
+QUIT
