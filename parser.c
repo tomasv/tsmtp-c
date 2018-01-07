@@ -23,37 +23,37 @@ static char* command_names[] = {
 };
 
 int get_session_command(char* buffer) {
-	if (strncmp(buffer, "HELO", 4) == 0)
+	if (strncasecmp(buffer, "HELO", 4) == 0)
 		return CMD_HELO;
-	if (strncmp(buffer, "MAIL FROM:", 10) == 0)
+	if (strncasecmp(buffer, "MAIL FROM:", 10) == 0)
 		return CMD_MAIL;
-	if (strncmp(buffer, "RCPT TO:", 8) == 0)
+	if (strncasecmp(buffer, "RCPT TO:", 8) == 0)
 		return CMD_RCPT;
-	if (strncmp(buffer, "DATA", 4) == 0)
+	if (strncasecmp(buffer, "DATA", 4) == 0)
 		return CMD_DATA;
-	if (strncmp(buffer, ".\r\n", 3) == 0) {
+	if (strncasecmp(buffer, ".\r\n", 3) == 0) {
 		return CMD_CRLF;
 	}
-	if (strncmp(buffer+strlen(buffer)-5, "\r\n.\r\n", 5) == 0) {
+	if (strncasecmp(buffer+strlen(buffer)-5, "\r\n.\r\n", 5) == 0) {
 		return CMD_CRLF;
 	}
-	if (strncmp(buffer, "QUIT", 4) == 0)
+	if (strncasecmp(buffer, "QUIT", 4) == 0)
 		return CMD_QUIT;
 	return -1;
 }
 
 int get_session_response(char* buffer) {
-	if (strncmp(buffer, "250", 3) == 0)
+	if (strncasecmp(buffer, "250", 3) == 0)
 		return REPLY_OK;
-	if (strncmp(buffer, "220", 3) == 0)
+	if (strncasecmp(buffer, "220", 3) == 0)
 		return REPLY_GREET;
-	if (strncmp(buffer, "501", 3) == 0)
+	if (strncasecmp(buffer, "501", 3) == 0)
 		return REPLY_SYNTAX_ERROR;
-	if (strncmp(buffer, "354", 3) == 0)
+	if (strncasecmp(buffer, "354", 3) == 0)
 		return REPLY_DATA_INFO;
-	if (strncmp(buffer, "221", 3) == 0)
+	if (strncasecmp(buffer, "221", 3) == 0)
 		return REPLY_BYE;
-	if (strncmp(buffer, "503", 3) == 0)
+	if (strncasecmp(buffer, "503", 3) == 0)
 		return REPLY_OOO;
 	return -1;
 }
@@ -104,9 +104,9 @@ struct request * parse_request(char * message)
 
 	/* for (word = strtok(arg_start, delim); word; word = strtok(NULL, delim)) { */
 	/* 	// avoid empty arguments (newlines, carry returns, etc.) */
-	/* 	if (!strncmp(word, "\n\0", 2)) */
+	/* 	if (!strncasecmp(word, "\n\0", 2)) */
 	/* 		break; */
-	/* 	if (!strncmp(word, "\r\0", 2)) */
+	/* 	if (!strncasecmp(word, "\r\0", 2)) */
 	/* 		break; */
 	/* 	add_to_list(&(req->arguments), strdup(word)); */
 	/* } */

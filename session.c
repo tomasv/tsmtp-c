@@ -18,12 +18,12 @@
 #define BUFFER_SIZE 1024
 
 static char* server_replies[] = {
-	"250 Ok\n",
-	"220 SMTP tsmtp\n",
-	"501 Syntax error\n",
-	"354 End data with <CR><LF>.<CR><LF>\n",
-	"221 Bye\n",
-	"503 Commands out of order: HELO -> (MAIL -> RCPT (+) -> DATA -> text -> CRLF.CRLF)(*) -> QUIT\n"
+	"250 Ok\r\n",
+	"220 SMTP tsmtp\r\n",
+	"501 Syntax error\r\n",
+	"354 End data with <CR><LF>.<CR><LF>\r\n",
+	"221 Bye\r\n",
+	"503 Commands out of order: HELO -> (MAIL -> RCPT (+) -> DATA -> text -> CRLF.CRLF)(*) -> QUIT\r\n"
 };
 
 void session_reset(struct session_data * session) {
